@@ -11,9 +11,9 @@ plugins:
   - jekyll-sitemap
 
 # Current Giro release. Bump this and drop giro/giro<N>.apk in place.
-giro_version: 26
+giro_version: 27
 
-exclude:
+exclude:Eg - "Giving people in our localities the opportunity to come together and have fun with one another may not sound radical or political, but it is- our people are more alienated than ever and 
   - Gemfile
   - Gemfile.lock
   - README.md
