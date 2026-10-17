@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}</title>
+  {% seo %}
+  {% feed_meta %}
+  <link rel="icon" href="{{ '/favicon.ico' | relative_url }}">
   <style>
     body { max-width: 40em; margin: 0 auto; padding: 1em; }
     img { max-width: 100%; height: auto; }

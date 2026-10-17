@@ -3,9 +3,15 @@ description: Lorem ipsum dolor sit amet.
 url: "https://tgnra.net"
 baseurl: ""
 permalink: /:year/:month/:day/:title/
+theme: null
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
 
 # Current Giro release. Bump this and drop giro/giro<N>.apk in place.
-giro_version: 25
+giro_version: 26
 
 exclude:
   - Gemfile
