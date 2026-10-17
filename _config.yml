@@ -1,0 +1,13 @@
+title: tgnra
+description: Lorem ipsum dolor sit amet.
+url: "https://tgnra.net"
+baseurl: ""
+permalink: /:year/:month/:day/:title/
+
+# Current Giro release. Bump this and drop giro/giro<N>.apk in place.
+giro_version: 25
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - README.md

@@ -1,0 +1,3 @@
+---
+---
+{{ site.giro_version }}
