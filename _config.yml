@@ -11,7 +11,7 @@ plugins:
   - jekyll-sitemap
 
 # Current Giro release. Bump this and drop giro/giro<N>.apk in place.
-giro_version: 29
+giro_version: 30
 
 exclude:
   - Gemfile
