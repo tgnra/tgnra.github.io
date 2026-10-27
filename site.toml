@@ -1,0 +1,12 @@
+title = "My blog"
+description = "Notes and writing."
+base_url = "https://example.com"
+author = "Your Name"
+language = "en"
+posts_per_page = 10
+feed_items = 20
+
+# Pages with `nav: <n>` in their front matter are appended after these, in order.
+[[nav]]
+title = "Posts"
+href = "/"

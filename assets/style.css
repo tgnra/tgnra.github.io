@@ -1,0 +1,140 @@
+/* Inlined into every page. Keep it small. */
+:root {
+  --bg: #fdfcfa;
+  --fg: #1d1c1a;
+  --muted: #5a5650;
+  --rule: #dcd8d0;
+  --link: #0a55a0;
+  --visited: #6a3a9c;
+  --focus: #c2410c;
+  --code-bg: #f1eee8;
+  --measure: 40rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141417;
+    --fg: #e9e6e1;
+    --muted: #aaa59d;
+    --rule: #34343a;
+    --link: #8cb8ff;
+    --visited: #c8a6ff;
+    --focus: #ff9a5c;
+    --code-bg: #1f1f24;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { color-scheme: light dark; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: clamp(1rem, 0.95rem + 0.25vw, 1.125rem) / 1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  overflow-wrap: break-word;
+}
+.wrap { max-width: var(--measure); margin-inline: auto; padding-inline: 1rem; }
+
+a { color: var(--link); text-underline-offset: 0.15em; }
+a:visited { color: var(--visited); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
+
+.skip {
+  position: absolute; left: 1rem; top: -100vh;
+  padding: 0.75rem 1rem; background: var(--fg); color: var(--bg); z-index: 10;
+}
+.skip:focus { top: 1rem; }
+.vh {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* Header + nav: a plain wrapping list, no JS menu. */
+.site-header { border-bottom: 1px solid var(--rule); }
+.site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 1rem; padding-block: 0.5rem; }
+.site-title { font-weight: 700; font-size: 1.15rem; color: var(--fg); text-decoration: none; padding-block: 0.6rem; }
+.site-title:visited { color: var(--fg); }
+nav ul { display: flex; flex-wrap: wrap; gap: 0 0.25rem; margin: 0; padding: 0; list-style: none; }
+nav a { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 0.5rem; }
+nav a:visited { color: var(--link); }
+nav a[aria-current="page"] { color: var(--fg); font-weight: 600; text-decoration-thickness: 2px; }
+
+main { display: block; padding-block: 2rem 3rem; }
+h1, h2, h3, h4 { line-height: 1.25; margin: 2rem 0 0.75rem; text-wrap: balance; }
+h1 { font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.4rem); margin-top: 0; }
+h2 { font-size: 1.45rem; }
+h3 { font-size: 1.2rem; }
+p, ul, ol, blockquote, pre, figure, .table-wrap { margin: 0 0 1.25rem; }
+blockquote { border-left: 3px solid var(--rule); padding-left: 1rem; color: var(--muted); margin-left: 0; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 2rem 0; }
+.meta { color: var(--muted); font-size: 0.95em; margin-top: -0.25rem; }
+
+code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 0.9em; }
+:not(pre) > code { background: var(--code-bg); padding: 0.1em 0.3em; border-radius: 3px; }
+pre { background: var(--code-bg); padding: 1rem; overflow-x: auto; border-radius: 4px; line-height: 1.45; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; min-width: 100%; }
+th, td { border-bottom: 1px solid var(--rule); padding: 0.5rem; text-align: left; vertical-align: top; }
+
+/* Images: width/height attributes reserve space, so nothing shifts as they load. */
+img { max-width: 100%; height: auto; }
+figure.img { margin-inline: 0; }
+figure.img img, .zoom img { display: block; }
+figcaption { color: var(--muted); font-size: 0.9em; margin-top: 0.5rem; }
+.no-js .img-js { display: none; }
+.img-js img { background: var(--code-bg); }
+/* The tiny dithered placeholder (and the dither tier) are scaled up as crisp pixels. */
+.img-js img:not([data-loaded]), .img-js img[data-tier="dither"] { image-rendering: pixelated; }
+.zoom { display: inline-block; max-width: 100%; cursor: zoom-in; vertical-align: top; }
+.upgrade {
+  display: inline-flex; align-items: center; min-height: 44px; margin-top: 0.5rem;
+  padding: 0 1rem; font: inherit; font-size: 0.9em; color: var(--fg);
+  background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer;
+}
+
+/* Lightbox: a native modal <dialog>. */
+.lightbox {
+  width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; background: transparent; color: #fff;
+}
+.lightbox::backdrop { background: rgb(0 0 0 / 0.88); }
+.lightbox picture { display: block; width: 100%; height: 100%; padding: 3.5rem 1rem 1rem; }
+.lightbox img {
+  width: 100%; height: 100%; object-fit: contain;
+  background: center / contain no-repeat;
+}
+.lightbox .close {
+  position: absolute; top: 0.5rem; right: 0.5rem; min-height: 44px; min-width: 44px;
+  padding: 0 1rem; font: inherit; color: #fff; background: rgb(0 0 0 / 0.5);
+  border: 1px solid rgb(255 255 255 / 0.6); border-radius: 4px; cursor: pointer;
+}
+
+/* Index */
+.post-list { list-style: none; padding: 0; }
+.post-list > li { margin-bottom: 2rem; }
+.post-list h2 { margin: 0 0 0.25rem; font-size: 1.3rem; }
+.post-list p { margin-bottom: 0; }
+.pagination ul { justify-content: space-between; }
+
+.site-footer { border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.9em; }
+.site-footer .wrap { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; justify-content: space-between; align-items: center; padding-block: 1rem; }
+.site-footer p { margin: 0; }
+.site-footer select { font: inherit; min-height: 44px; margin-left: 0.5rem; color: var(--fg); background: var(--bg); border: 1px solid var(--rule); border-radius: 4px; }
+
+/* Motion: page slide via cross-document view transitions, and the lightbox fade.
+   Nothing here applies under prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  .site-header { view-transition-name: site-header; }
+  .site-footer { view-transition-name: site-footer; }
+  main { view-transition-name: main; }
+  ::view-transition-old(main) { animation: 250ms ease-out both vt-out; }
+  ::view-transition-new(main) { animation: 250ms ease-out both vt-in; }
+  html:active-view-transition-type(back)::view-transition-old(main) { animation-name: vt-out-back; }
+  html:active-view-transition-type(back)::view-transition-new(main) { animation-name: vt-in-back; }
+  .lightbox[open] { animation: lb-in 180ms ease-out; }
+}
+@keyframes vt-out { to { transform: translateX(-3rem); opacity: 0; } }
+@keyframes vt-in { from { transform: translateX(3rem); opacity: 0; } }
+@keyframes vt-out-back { to { transform: translateX(3rem); opacity: 0; } }
+@keyframes vt-in-back { from { transform: translateX(-3rem); opacity: 0; } }
+@keyframes lb-in { from { opacity: 0; transform: scale(0.97); } }
