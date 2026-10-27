@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Serve dist on :5000",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "http.server",
+      "args": ["5000", "--bind", "127.0.0.1", "--directory", "${workspaceFolder}/dist"],
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "preLaunchTask": "build",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}

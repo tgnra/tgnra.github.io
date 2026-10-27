@@ -43,14 +43,14 @@ Each image becomes:
 | Tier | When | Output |
 |---|---|---|
 | placeholder | always, inline in the HTML | 24px, 8 colours, dithered PNG (~300 B) |
-| dither | Save-Data, 2G, or "Low" chosen | 320/480px, 8-colour ordered-dither lossless WebP, shown as crisp pixels |
+| dither | Save-Data or 2G | 320/480px, 8-colour ordered-dither lossless WebP, shown as crisp pixels |
 | lite | 3G | 400/800px WebP q45 |
 | full | fast or unknown (Safari, Firefox) | 480/800/1280px AVIF and WebP, 800px JPEG fallback |
 | original | lightbox | source size up to 2560px |
 
 - `width` and `height` are always set, so nothing shifts as images load.
 - `assets/img.js` picks the tier from `navigator.connection` and loads images as they approach the viewport.
-- The footer has a quality control, and low tiers offer a "Load full-quality image" button.
+- Low tiers offer a "Load full-quality image" button on each image.
 - Without JS, a `<noscript>` `<picture>` loads the full tier lazily.
 - Variants are cached in `.cache/images/` by content hash. Bump `VERSION` in `ssg/images.py` after changing encoder settings.
 - Transparency is composited onto white.

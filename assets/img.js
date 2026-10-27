@@ -1,16 +1,11 @@
 // Inlined at the end of <body>. Picks an image tier from the connection, loads
 // images as they near the viewport, and runs the lightbox.
 (function () {
-  var d = document, KEY = "img-quality", RANK = { dither: 0, lite: 1, full: 2 };
-
-  function pref() {
-    try { return localStorage.getItem(KEY) || "auto"; } catch (e) { return "auto"; }
-  }
+  var d = document, RANK = { dither: 0, lite: 1, full: 2 };
 
   function tier() {
-    var p = pref(), c = navigator.connection;
-    if (p === "low") return "dither";
-    if (p === "high" || !c) return "full";
+    var c = navigator.connection;
+    if (!c) return "full";
     if (c.saveData || /2g/.test(c.effectiveType)) return "dither";
     if (c.effectiveType === "3g") return "lite";
     return "full";
@@ -86,18 +81,6 @@
       io.observe(img);
     }
   });
-
-  // Footer quality control.
-  var ctl = d.getElementById("img-quality");
-  if (ctl) {
-    ctl.value = pref();
-    ctl.closest("[hidden]") && ctl.closest("[hidden]").removeAttribute("hidden");
-    ctl.addEventListener("change", function () {
-      try { localStorage.setItem(KEY, ctl.value); } catch (e) {}
-      var t = tier();
-      imgs.forEach(function (img) { if (img.hasAttribute("data-tier")) load(img, t); });
-    });
-  }
 
   // Lightbox: always the original-size image, whatever the tier.
   var dlg, opener;

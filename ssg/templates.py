@@ -29,6 +29,7 @@ class Templates:
         self.css = _minify_css((assets_dir / "style.css").read_text(encoding="utf-8"))
         self.head_js = _minify_js((assets_dir / "head.js").read_text(encoding="utf-8"))
         self.img_js = _minify_js((assets_dir / "img.js").read_text(encoding="utf-8"))
+        self.theme_js = _minify_js((assets_dir / "theme.js").read_text(encoding="utf-8"))
 
     # -- layout ---------------------------------------------------------------
 
@@ -38,7 +39,6 @@ class Templates:
         canonical = site["base_url"] + path
         robots = '<meta name="robots" content="noindex">' if noindex else ""
         scripts = f"<script>{self.img_js}</script>" if has_images else ""
-        quality = self._quality_control() if has_images else ""
         return _tidy(f"""<!doctype html>
 <html lang="{esc(site['language'])}" class="no-js">
 <head>
@@ -68,9 +68,9 @@ class Templates:
 <footer class="site-footer">
 <div class="wrap">
 <p>© {esc(site['year'])} {esc(site['author'])} · <a href="/feed.xml">RSS feed</a></p>
-{quality}
 </div>
 </footer>
+<script>{self.theme_js}</script>
 {scripts}
 </body>
 </html>
@@ -82,16 +82,10 @@ class Templates:
             href = item["href"]
             current = ' aria-current="page"' if href == path else ""
             items.append(f'<li><a href="{esc(href)}"{current}>{esc(item["title"])}</a></li>')
+        # Revealed by theme.js; without JS the system setting applies.
+        items.append(f'<li hidden><button type="button" class="theme-toggle" aria-pressed="false"'
+                     f' title="Dark theme">{THEME_ICON}<span class="vh">Dark theme</span></button></li>')
         return f'<nav aria-label="Main"><ul>{"".join(items)}</ul></nav>'
-
-    def _quality_control(self):
-        # Revealed by img.js; useless without JS.
-        return ('<p hidden><label for="img-quality">Image quality</label>'
-                '<select id="img-quality">'
-                '<option value="auto">Automatic</option>'
-                '<option value="low">Low (saves data)</option>'
-                '<option value="high">High</option>'
-                '</select></p>')
 
     # -- pages ----------------------------------------------------------------
 
@@ -141,6 +135,12 @@ class Templates:
         body = """<h1>Page not found</h1>
 <p>Sorry, there’s nothing at this address. Try the <a href="/">list of posts</a>.</p>"""
         return self.layout(title="Page not found", body=body, path="/404.html", noindex=True)
+
+
+# Half-filled circle: reads as "contrast" whichever theme is active.
+THEME_ICON = ('<svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20">'
+              '<circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/>'
+              '<path d="M10 2a8 8 0 0 1 0 16z" fill="currentColor"/></svg>')
 
 
 def index_url(page):

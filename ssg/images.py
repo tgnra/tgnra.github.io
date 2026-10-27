@@ -19,7 +19,7 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageOps
 
 # Bump when encoder settings change so cached variants are regenerated.
-VERSION = 2
+VERSION = 3
 
 PLACEHOLDER_WIDTH = 24
 PLACEHOLDER_COLOURS = 8
@@ -171,6 +171,11 @@ def _settings():
 
 def _flatten(img):
     """Composite transparency onto white; every tier is then plain RGB."""
+    if img.mode.startswith("I"):
+        # 16/32-bit integer images: convert("RGB") would clip to white.
+        img = img.convert("I")
+        top = img.getextrema()[1]
+        img = img.point(lambda v: v * 255 / top if top > 255 else v).convert("L")
     if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
         img = img.convert("RGBA")
         bg = Image.new("RGB", img.size, (255, 255, 255))
