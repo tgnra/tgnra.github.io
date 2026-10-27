@@ -131,6 +131,12 @@ class Templates:
                  if page < pages else "<li></li>")
         return f'<nav class="pagination" aria-label="Pagination"><ul>{newer}{older}</ul></nav>'
 
+    def giro(self, filename, version, size):
+        body = f"""<h1>Giro</h1>
+<p>Version {esc(version)} for Android · {size / 1_000_000:.1f} MB</p>
+<p><a href="/giro/{esc(filename)}" download type="application/vnd.android.package-archive">Download {esc(filename)}</a></p>"""
+        return self.layout(title="Giro", body=body, path="/giro/", noindex=True)
+
     def not_found(self):
         body = """<h1>Page not found</h1>
 <p>Sorry, there’s nothing at this address. Try the <a href="/">list of posts</a>.</p>"""

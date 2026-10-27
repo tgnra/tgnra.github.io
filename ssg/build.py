@@ -2,6 +2,7 @@
 
 import datetime as dt
 import math
+import re
 import shutil
 import time
 import tomllib
@@ -24,20 +25,25 @@ DEFAULTS = {
 }
 
 
-def load_config(root):
+GIRO = re.compile(r"giro(\d+)\.apk")
+
+
+def load_config(root, base_url=None):
     site = dict(DEFAULTS)
     path = Path(root) / "site.toml"
     if path.exists():
         site.update(tomllib.loads(path.read_text(encoding="utf-8")))
+    if base_url:
+        site["base_url"] = base_url
     site["base_url"] = site["base_url"].rstrip("/")
     site.setdefault("year", dt.date.today().year)
     return site
 
 
-def build(root=".", drafts=False, log=print):
+def build(root=".", drafts=False, base_url=None, log=print):
     started = time.perf_counter()
     root = Path(root).resolve()
-    site = load_config(root)
+    site = load_config(root, base_url)
     content_dir = root / "content"
     dist = root / "dist"
     warnings = []
@@ -94,17 +100,42 @@ def build(root=".", drafts=False, log=print):
     urls = [(index_url(n), None) for n in range(1, n_pages + 1)]
     urls += [(d.url, d.date) for d in posts + pages]
     (dist / "sitemap.xml").write_text(feed.sitemap(site, urls), encoding="utf-8")
-    (dist / "robots.txt").write_text(f"User-agent: *\nAllow: /\nSitemap: {site['base_url']}/sitemap.xml\n")
-    # Netlify / Cloudflare Pages header rules: hashed images never change.
-    (dist / "_headers").write_text("/img/*\n  Cache-Control: public, max-age=31536000, immutable\n")
+    (dist / "robots.txt").write_text(
+        f"User-agent: *\nAllow: /\nDisallow: /giro/\nSitemap: {site['base_url']}/sitemap.xml\n")
+    # Netlify / Cloudflare Pages header rules (GitHub Pages ignores this file):
+    # hashed images never change; giro/ stays out of search results.
+    (dist / "_headers").write_text(
+        "/img/*\n  Cache-Control: public, max-age=31536000, immutable\n"
+        "/giro/*\n  X-Robots-Tag: noindex, nofollow\n")
     static = content_dir / "static"
     if static.is_dir():
         shutil.copytree(static, dist, dirs_exist_ok=True)
+    if giro := copy_giro(content_dir / "downloads", dist / "giro", log):
+        write(dist, "/giro/", t.giro(*giro))
 
     n_images = len(list((dist / "img").glob("*"))) if (dist / "img").exists() else 0
     log(f"built {len(posts)} posts, {len(pages)} pages, {n_images} image files "
         f"in {time.perf_counter() - started:.2f}s -> {dist}")
     return warnings
+
+
+def copy_giro(downloads, out, log):
+    """Publish the highest-numbered giro<N>.apk plus version.txt containing N.
+
+    Returns (filename, version, size in bytes), or None when there is no APK.
+    """
+    if not downloads.is_dir():
+        return
+    found = [(int(m.group(1)), p) for p in downloads.iterdir()
+             if p.is_file() and (m := GIRO.fullmatch(p.name))]
+    if not found:
+        return
+    version, apk = max(found)
+    out.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(apk, out / apk.name)
+    (out / "version.txt").write_text(str(version), encoding="utf-8")
+    log(f"giro: {apk.name} (version {version})")
+    return apk.name, version, apk.stat().st_size
 
 
 def write(dist, url, html):

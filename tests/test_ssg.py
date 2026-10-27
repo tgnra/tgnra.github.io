@@ -83,9 +83,12 @@ class SiteTest(unittest.TestCase):
         html = self.read("posts/pic/index.html")
         for needle in ('<figure class="img">', 'width="1000"', 'height="500"', "data-eager",
                        'src="data:image/png;base64,', "data-dither=", "data-lite=", "data-full=",
-                       'type="image/avif"', "<noscript>",
+                       'type="image/avif"', 'type="image/webp"', "<noscript>",
                        'class="zoom"', "<figcaption>Caption</figcaption>"):
             self.assertIn(needle, html)
+        self.assertTrue(list((self.root / "dist/img").glob("*-f*.avif")))
+        # JPEG is only a fallback: never in a <source>, only on the <img> and the lightbox href.
+        self.assertNotIn('type="image/jpeg"', html)
         self.assertIn("IntersectionObserver", html)  # loader only on pages with images
         self.assertNotIn("IntersectionObserver", self.read("index.html"))
 

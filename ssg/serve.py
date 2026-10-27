@@ -21,21 +21,21 @@ def _snapshot(root):
     return stamps
 
 
-def _rebuild(root, drafts):
+def _rebuild(root, drafts, base_url):
     try:
-        build(root, drafts=drafts)
+        build(root, drafts=drafts, base_url=base_url)
     except Exception:
         traceback.print_exc()
 
 
-def _watch(root, drafts):
+def _watch(root, drafts, base_url):
     last = _snapshot(root)
     while True:
         time.sleep(0.5)
         now = _snapshot(root)
         if now != last:
             last = now
-            _rebuild(root, drafts)
+            _rebuild(root, drafts, base_url)
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -55,10 +55,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         pass
 
 
-def serve(root=".", port=8000, drafts=False):
+def serve(root=".", port=8000, drafts=False, base_url=None):
     root = Path(root).resolve()
-    _rebuild(root, drafts)
-    threading.Thread(target=_watch, args=(root, drafts), daemon=True).start()
+    _rebuild(root, drafts, base_url)
+    threading.Thread(target=_watch, args=(root, drafts, base_url), daemon=True).start()
     handler = functools.partial(Handler, directory=str(root / "dist"))
     with http.server.ThreadingHTTPServer(("127.0.0.1", port), handler) as httpd:
         print(f"serving http://localhost:{port}/ (ctrl+c to stop)")

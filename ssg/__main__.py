@@ -15,22 +15,24 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("build", help="build the site into dist/")
     b.add_argument("--drafts", action="store_true", help="include draft posts and pages")
+    b.add_argument("--base-url", help="override base_url from site.toml")
     s = sub.add_parser("serve", help="build, serve dist/ and rebuild on change")
     s.add_argument("--port", type=int, default=8000)
     s.add_argument("--drafts", action="store_true")
+    s.add_argument("--base-url", help="override base_url from site.toml")
     n = sub.add_parser("new", help="create a new draft post")
     n.add_argument("title")
     args = parser.parse_args(argv)
 
     if args.cmd == "build":
         try:
-            build(".", drafts=args.drafts)
+            build(".", drafts=args.drafts, base_url=args.base_url)
         except (BuildError, ValueError) as e:
             print(f"error: {e}", file=sys.stderr)
             return 1
     elif args.cmd == "serve":
         from .serve import serve
-        serve(".", port=args.port, drafts=args.drafts)
+        serve(".", port=args.port, drafts=args.drafts, base_url=args.base_url)
     elif args.cmd == "new":
         today = dt.date.today().isoformat()
         path = Path("content/posts") / f"{today}-{slugify(args.title)}.md"
