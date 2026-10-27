@@ -4,7 +4,7 @@ Tiers (see README):
   placeholder  tiny dithered PNG, inlined as a data URI
   dither       8-colour ordered-dithered lossless WebP (save-data / 2G)
   lite         low-quality WebP (3G)
-  full         AVIF + WebP + JPEG fallback (fast / unknown)
+  full         AVIF, then WebP, then a JPEG fallback (fast / unknown)
   original     source size (capped) for the lightbox
 """
 
@@ -19,7 +19,7 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageOps
 
 # Bump when encoder settings change so cached variants are regenerated.
-VERSION = 3
+VERSION = 5
 
 PLACEHOLDER_WIDTH = 24
 PLACEHOLDER_COLOURS = 8

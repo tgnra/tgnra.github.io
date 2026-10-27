@@ -1,0 +1,66 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Cache generated image variants
+        uses: actions/cache@v4
+        with:
+          path: .cache/images
+          key: images-${{ hashFiles('content/**/*.jpg', 'content/**/*.png', 'content/**/*.gif', 'content/**/*.webp', 'ssg/images.py') }}
+          restore-keys: images-
+
+      - name: Test
+        run: python -m unittest
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Require a root-level site
+        if: steps.pages.outputs.base_path != ''
+        run: |
+          echo "::error::This site uses root-relative URLs (/img/, /posts/) and must be served from the domain root, but Pages will serve it under '${{ steps.pages.outputs.base_path }}'. Use a <user>.github.io repository or a custom domain (content/static/CNAME)."
+          exit 1
+
+      - name: Build
+        run: python -m ssg build --base-url "${{ steps.pages.outputs.base_url }}"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

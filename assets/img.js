@@ -3,9 +3,13 @@
 (function () {
   var d = document, RANK = { dither: 0, lite: 1, full: 2 };
 
+  // The lite and dither tiers are WebP-only; without WebP everything gets
+  // the full tier, whose <picture> falls back to JPEG.
+  var webp = d.createElement("canvas").toDataURL("image/webp").indexOf("data:image/webp") === 0;
+
   function tier() {
     var c = navigator.connection;
-    if (!c) return "full";
+    if (!c || !webp) return "full";
     if (c.saveData || /2g/.test(c.effectiveType)) return "dither";
     if (c.effectiveType === "3g") return "lite";
     return "full";
