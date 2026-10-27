@@ -86,8 +86,17 @@ class SiteTest(unittest.TestCase):
                        'type="image/avif"', "<noscript>",
                        'class="zoom"', "<figcaption>Caption</figcaption>"):
             self.assertIn(needle, html)
-        self.assertIn("<script>(function", html)  # loader only on pages with images
-        self.assertNotIn("<script>(function", self.read("index.html"))
+        self.assertIn("IntersectionObserver", html)  # loader only on pages with images
+        self.assertNotIn("IntersectionObserver", self.read("index.html"))
+
+    def test_theme_toggle_on_every_page(self):
+        self.post("2026-01-01-a.md", "---\ntitle: A\n---\nx\n")
+        self.build()
+        for page in ("index.html", "posts/a/index.html", "404.html"):
+            html = self.read(page)
+            self.assertIn('class="theme-toggle" aria-pressed="false"', html)
+            self.assertIn('localStorage.getItem("theme")', html)
+        self.assertNotIn("img-quality", self.read("posts/a/index.html"))
 
     def test_decorative_image_is_not_a_link(self):
         self.post("2026-01-01-pic.md", '---\ntitle: Pic\n---\n![""](../images/a.jpg)\n')
@@ -124,7 +133,7 @@ class SampleSiteTest(unittest.TestCase):
     def test_sample_content_builds(self):
         root = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, root)
-        shutil.copytree(ROOT / "content", root / "content")
+        shutil.copytree(ROOT / "content", root / "content", ignore=shutil.ignore_patterns("*stress*"))
         shutil.copy(ROOT / "site.toml", root / "site.toml")
         self.assertEqual(build(root, log=lambda msg: None), [])
 

@@ -52,9 +52,11 @@ def build(root=".", drafts=False, log=print):
         for p in sorted((p for p in pages if p.nav is not None), key=lambda p: p.nav)
     ]
 
-    if dist.exists():
-        shutil.rmtree(dist)
-    dist.mkdir()
+    # Empty dist/ rather than deleting it: on Windows a server or Explorer
+    # window holding the folder open would make the delete fail.
+    dist.mkdir(exist_ok=True)
+    for child in dist.iterdir():
+        shutil.rmtree(child) if child.is_dir() else child.unlink()
     images = ImageProcessor(dist / "img", root / ".cache" / "images")
     page_ext = BlogExtension(images, content_dir, warn=warn)
     feed_ext = BlogExtension(images, content_dir, mode="feed", base_url=site["base_url"],
