@@ -2,3 +2,4 @@
 dist/
 .cache/
 __pycache__/
+content/downloads/*.apk

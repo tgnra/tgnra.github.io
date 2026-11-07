@@ -78,6 +78,12 @@ Use `--base-url` to build for another host: `python -m ssg build --base-url http
 
 To publish an APK, put `giro<N>.apk` files in `content/downloads/`. `N` must be a plain integer, such as `giro12.apk`.
 
+APKs aren't committed (`.gitignore` excludes them). Before building, the Pages workflow downloads the APK from the newest GitHub Release of the private `tgnra/lbdas` repo, using the `LBDAS_RELEASES_TOKEN` secret: a fine-grained token with access to only `tgnra/lbdas` and **Contents: Read-only**. Pushing a `v<N>` tag in `tgnra/lbdas` builds the release, then re-runs this workflow to deploy it. To get the APK for a local build:
+
+```sh
+gh release download --repo tgnra/lbdas --pattern 'giro*.apk' --dir content/downloads --clobber
+```
+
 The build copies the highest-numbered file (compared as numbers, so 10 beats 9) to `/giro/giro<N>.apk`. It also writes `/giro/version.txt`, which contains just `N` with no newline. Other files in `content/downloads/` are ignored. If no file matches, nothing is published.
 
 `giro/` is kept out of search engines:
@@ -85,5 +91,3 @@ The build copies the highest-numbered file (compared as numbers, so 10 beats 9) 
 - it never appears in the sitemap
 - there's no index page and nothing links to it
 - `_headers` adds `X-Robots-Tag: noindex`, but only on Netlify and Cloudflare; GitHub Pages ignores it
-
-GitHub rejects files over 100 MB in a git repository. For a larger APK, use Git LFS (Pages artifacts include LFS files only if the checkout step sets `lfs: true`), or host the APK on GitHub Releases instead.

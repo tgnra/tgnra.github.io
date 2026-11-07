@@ -48,6 +48,19 @@ jobs:
           echo "::error::This site uses root-relative URLs (/img/, /posts/) and must be served from the domain root, but Pages will serve it under '${{ steps.pages.outputs.base_path }}'. Use a <user>.github.io repository or a custom domain (content/static/CNAME)."
           exit 1
 
+      # The Giro APK isn't kept in git: it comes from the newest GitHub Release of the private
+      # tgnra/lbdas repo, whose release workflow re-runs this one after publishing. Fails rather
+      # than deploying a site without the download
+      - name: Fetch the latest Giro APK
+        env:
+          GH_TOKEN: ${{ secrets.LBDAS_RELEASES_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Missing the LBDAS_RELEASES_TOKEN secret (read access to tgnra/lbdas releases)"
+            exit 1
+          fi
+          gh release download --repo tgnra/lbdas --pattern 'giro*.apk' --dir content/downloads --clobber
+
       - name: Build
         run: python -m ssg build --base-url "${{ steps.pages.outputs.base_url }}"
 
