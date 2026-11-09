@@ -48,7 +48,7 @@ content/albums/2026-11-02-golden-hour/
 - The date comes from the folder prefix (`YYYY-MM-DD-slug`) or a `date:` field. The URL is `/albums/slug/`.
 - `album.md`: front matter with `title`, `summary`, `date`, `draft` and `featured: 01.jpg, 04.jpg`, then a Markdown description.
 - `album.json`: `{"title", "summary", "description", "featured": [...], "photos": {"01.jpg": {"alt": "...", "caption": "..."}}}`. Use `photos` for per-photo alt text and captions; without it, alt text is "Photo N from <title>".
-- The homepage shows up to 4 photos from each album in one row: your `featured` photos, or an even spread. 4 on ultrawides (2000px+), 3 on desktops and tablets, 2 on phones.
+- The homepage shows up to 4 photos from each album in one row. `featured` is optional: any photos listed there come first, and the free slots are filled with an even spread of the rest (photos beyond the 4th are ignored). `summary` is optional too. 4 on ultrawides (2000px+), 3 on desktops and tablets, 2 on phones.
 - Albums and posts are mixed, newest first, on the homepage. `/albums/` and `/posts/` list each type, `feed.xml` is posts only and `photos.xml` is albums only.
 
 ## Images

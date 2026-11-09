@@ -55,6 +55,9 @@ def build(root=".", drafts=False, base_url=None, log=print):
     posts, pages = content.load_all(content_dir, drafts=drafts)
     albums = content.load_albums(content_dir, drafts=drafts)
     _check_album_slugs(albums)
+    for album in albums:
+        for msg in album.warnings:
+            warn(msg)
     site["nav"] = list(site["nav"]) + [
         {"title": p.title, "href": p.url}
         for p in sorted((p for p in pages if p.nav is not None), key=lambda p: p.nav)

@@ -168,8 +168,33 @@ class AlbumTest(SiteTest):
         self.build()
         page = self.read("albums/trip/index.html")
         self.assertIn('alt="A red hill"', page)
+        # c.jpg is featured, so it comes first; the other photos fill the free slots.
+        strip = self.read("index.html").split('class="strip"')[1].split("</article>")[0]
+        self.assertEqual(strip.count('class="img-js"'), 3)
+
+    def test_album_without_summary_or_album_file(self):
+        self.album("2026-04-01-bare")
+        self.album("2026-04-02-nosum", meta="---\ntitle: Quiet\n---\n")
+        self.build()
         index = self.read("index.html")
-        self.assertEqual(index.count('class="img-js"'), 1)
+        self.assertIn(">Bare<", index)
+        self.assertIn(">Quiet<", index)
+        self.assertNotIn('class="summary"', index)
+
+    def test_featured_photos_lead_and_free_slots_are_filled(self):
+        from ssg.content import load_album
+        d = self.album("2026-04-01-many", files=[f"{i}.jpg" for i in range(1, 9)],
+                       meta="---\ntitle: Many\nfeatured: 7.jpg\n---\n")
+        names = [p.path.name for p in load_album(d).home_photos()]
+        self.assertEqual(len(names), 4)
+        self.assertEqual(names[0], "7.jpg")
+        self.assertEqual(len(set(names)), 4)
+
+    def test_unknown_featured_photo_warns_instead_of_failing(self):
+        self.album("2026-04-01-typo", meta="---\ntitle: Typo\nfeatured: b.jpg, nope.jpg\n---\n")
+        warnings = self.build()
+        self.assertTrue(any("nope.jpg" in w for w in warnings))
+        self.assertIn(">Typo<", self.read("index.html"))
 
     def test_homepage_strip_images_are_not_nested_links(self):
         self.album("2026-04-01-trip")

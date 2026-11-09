@@ -214,6 +214,8 @@ body.wide main > h1.home-col { margin-top: 2rem; }
 .strip > div { flex: var(--ar) 1 0%; min-width: 0; }
 .strip .img-wrap, .strip picture { display: block; }
 .strip img { display: block; width: 100%; height: auto; transition: filter 0.3s; }
+/* Safety net for albums with only one or two photos: never taller than most of the screen (crops instead). */
+.strip img { max-height: 75vh; object-fit: cover; }
 .album-card:hover .strip img { filter: brightness(1.06) saturate(1.08); }
 /* Fewer photos = taller photos (height is width / summed aspect ratios). 3, or 4 on ultrawides, 2 on phones. */
 .strip > div:nth-child(n+4) { display: none; }

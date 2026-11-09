@@ -54,6 +54,7 @@ class Album:
     summary: str = ""
     draft: bool = False
     featured: list = field(default_factory=list)
+    warnings: list = field(default_factory=list)  # reported by the build, not fatal
     html: str = ""
     kind: str = "album"
 
@@ -62,13 +63,23 @@ class Album:
         return f"/albums/{self.slug}/"
 
     def home_photos(self):
-        """The photos shown in the homepage strip: `featured`, else evenly spaced."""
-        if self.featured:
-            return self.featured[:MAX_FEATURED]
-        n = min(MAX_FEATURED, len(self.photos))
-        if n == len(self.photos):
-            return list(self.photos)
-        return [self.photos[round(i * (len(self.photos) - 1) / (n - 1))] for i in range(n)]
+        """The photos shown in the homepage strip: any `featured` photos first (in the
+        order given), then the free slots filled with an even spread of the rest."""
+        picked = self.featured[:MAX_FEATURED]
+        taken = {id(p) for p in picked}
+        rest = [p for p in self.photos if id(p) not in taken]
+        return picked + _spread(rest, MAX_FEATURED - len(picked))
+
+
+def _spread(items, n):
+    """Up to n items, evenly spaced from first to last (the middle one when n == 1)."""
+    if n <= 0 or not items:
+        return []
+    if n >= len(items):
+        return list(items)
+    if n == 1:
+        return [items[len(items) // 2]]
+    return [items[round(i * (len(items) - 1) / (n - 1))] for i in range(n)]
 
 
 def parse_front_matter(text):
@@ -169,16 +180,20 @@ def load_album(folder):
         photos.append(Photo(f, alt=str(d.get("alt") or f"Photo {i} from {title}"),
                             caption=str(d.get("caption", ""))))
     by_name = {p.path.name: p for p in photos}
-    featured = []
+    # A wrong name in `featured` is skipped with a warning, so a typo can't break the build.
+    featured, warnings = [], []
     raw = meta.get("featured") or []
     for name in (raw if isinstance(raw, list) else str(raw).split(",")):
-        name = name.strip()
+        name = str(name).strip()
+        if not name:
+            continue
         if name not in by_name:
-            raise ValueError(f"{folder}: featured photo {name!r} is not in the album")
-        featured.append(by_name[name])
+            warnings.append(f"{folder}: featured photo {name!r} is not in the album; skipped")
+        elif by_name[name] not in featured:
+            featured.append(by_name[name])
     return Album(source=folder, slug=meta.get("slug") or slugify(stem), title=title, date=date,
                  photos=photos, body=body, summary=str(meta.get("summary", "")),
-                 draft=bool(meta.get("draft", False)), featured=featured)
+                 draft=bool(meta.get("draft", False)), featured=featured, warnings=warnings)
 
 
 def load_albums(content_dir, drafts=False):
