@@ -132,6 +132,57 @@ class SiteTest(unittest.TestCase):
         self.assertIn('rel="prev"', self.read("page/3/index.html"))
 
 
+class AlbumTest(SiteTest):
+    def album(self, folder, files=("a.jpg", "b.jpg", "c.jpg"), meta=None):
+        d = self.root / "content/albums" / folder
+        d.mkdir(parents=True)
+        for f in files:
+            shutil.copy(self.root / "content/images/a.jpg", d / f)
+        if meta:
+            (d / "album.md").write_text(meta, encoding="utf-8")
+        return d
+
+    def test_albums_and_posts_are_mixed_newest_first(self):
+        self.post("2026-03-01-mid-post.md", "---\ntitle: Mid\n---\nx\n")
+        self.album("2026-04-01-spring", meta="---\ntitle: Spring\nsummary: S\n---\nDesc\n")
+        self.album("2026-02-01-winter", meta="---\ntitle: Winter\n---\n")
+        self.build()
+        index = self.read("index.html")
+        self.assertLess(index.index(">Spring<"), index.index(">Mid<"))
+        self.assertLess(index.index(">Mid<"), index.index(">Winter<"))
+        self.assertIn("Desc", self.read("albums/spring/index.html"))
+
+    def test_feeds_are_separate(self):
+        self.post("2026-03-01-p.md", "---\ntitle: A post\n---\nx\n")
+        self.album("2026-04-01-spring", meta="---\ntitle: Spring\n---\n")
+        self.build()
+        posts = etree.fromstring(self.read("feed.xml")).findall("channel/item/title")
+        photos = etree.fromstring(self.read("photos.xml")).findall("channel/item/title")
+        self.assertEqual([t.text for t in posts], ["A post"])
+        self.assertEqual([t.text for t in photos], ["Spring"])
+
+    def test_json_album_with_alt_and_featured(self):
+        d = self.album("2026-04-01-trip")
+        (d / "album.json").write_text(
+            '{"title": "Trip", "featured": ["c.jpg"], "photos": {"a.jpg": {"alt": "A red hill"}}}')
+        self.build()
+        page = self.read("albums/trip/index.html")
+        self.assertIn('alt="A red hill"', page)
+        index = self.read("index.html")
+        self.assertEqual(index.count('class="img-js"'), 1)
+
+    def test_homepage_strip_images_are_not_nested_links(self):
+        self.album("2026-04-01-trip")
+        self.build()
+        strip = self.read("index.html").split('class="strip"')[1].split("</article>")[0]
+        self.assertNotIn("zoom", strip)
+
+    def test_album_without_date_or_photos_fails(self):
+        (self.root / "content/albums/nodate").mkdir(parents=True)
+        with self.assertRaises(ValueError):
+            self.build()
+
+
 class SampleSiteTest(unittest.TestCase):
     def test_sample_content_builds(self):
         root = Path(tempfile.mkdtemp())

@@ -34,12 +34,12 @@ def figure_html(*args, **kwargs):
     return to_html_string(figure(*args, **kwargs))
 
 
-def image(info, alt, eager=False, mode="page", base_url=""):
+def image(info, alt, eager=False, mode="page", base_url="", sizes=SIZES, link=True):
     """Element for one processed image.
 
     mode="page": a JS-upgraded <picture> (placeholder src, data-* srcsets per
     tier) plus a <noscript> fallback, wrapped in a lightbox link unless the
-    image is decorative. mode="feed": a single absolute-URL <img>.
+    image is decorative or link=False (e.g. inside another link). mode="feed": a single absolute-URL <img>.
     """
     size = {"width": str(info.width), "height": str(info.height)}
     if mode == "feed":
@@ -52,7 +52,7 @@ def image(info, alt, eager=False, mode="page", base_url=""):
         "src": info.placeholder,
         "alt": alt,
         **size,
-        "sizes": SIZES,
+        "sizes": sizes,
         "decoding": "async",
         "data-full": info.srcset(info.full_jpeg),
         "data-lite": info.srcset(info.lite),
@@ -70,14 +70,14 @@ def image(info, alt, eager=False, mode="page", base_url=""):
     etree.SubElement(pic, "img", {
         "src": info.fallback,
         "srcset": info.srcset(info.full_jpeg),
-        "sizes": SIZES,
+        "sizes": sizes,
         "alt": alt,
         **size,
         "decoding": "async",
         **loading,
     })
 
-    if not alt:
+    if not alt or not link:
         wrap = etree.Element("span", {"class": "img-wrap"})
     else:
         o = info.original
@@ -91,7 +91,7 @@ def image(info, alt, eager=False, mode="page", base_url=""):
         })
     wrap.append(js)
     wrap.append(noscript)
-    if alt:
+    if alt and link:
         etree.SubElement(wrap, "span", {"class": "vh"}).text = " (open full size)"
     return wrap
 

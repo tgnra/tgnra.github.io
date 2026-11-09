@@ -1,0 +1,9 @@
+{
+  "title": "Night bus",
+  "summary": "The city after the last train, seen through fogged-up windows.",
+  "description": "Shot handheld at **1/15s** on the top deck. The blur is the point.",
+  "photos": {
+    "01.jpg": { "alt": "A dim valley under a deep blue sky", "caption": "Top deck, front seat" },
+    "03.jpg": { "alt": "A tall dark scene with a low orange glow at the horizon" }
+  }
+}

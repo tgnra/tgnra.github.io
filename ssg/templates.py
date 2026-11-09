@@ -4,6 +4,10 @@ import re
 from html import escape
 from pathlib import Path
 
+from markdown.serializers import to_html_string
+
+from .markdown_ext import image
+
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
 
 
@@ -33,7 +37,8 @@ class Templates:
 
     # -- layout ---------------------------------------------------------------
 
-    def layout(self, *, title, body, path, description="", has_images=False, noindex=False):
+    def layout(self, *, title, body, path, description="", has_images=False, noindex=False,
+               wide=False):
         site = self.site
         full_title = site["title"] if title == site["title"] else f"{title} – {site['title']}"
         canonical = site["base_url"] + path
@@ -49,12 +54,14 @@ class Templates:
 <meta name="color-scheme" content="light dark">
 <link rel="canonical" href="{esc(canonical)}">
 <link rel="alternate" type="application/rss+xml" title="{esc(site['title'])}" href="/feed.xml">
+<link rel="alternate" type="application/rss+xml" title="{esc(site['title'])} – photos" href="/photos.xml">
+<link rel="preload" href="/fonts/adamina.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="icon" href="{esc(site.get('favicon') or 'data:,')}">
 {robots}
 <script>{self.head_js}</script>
 <style>{self.css}</style>
 </head>
-<body>
+<body{' class="wide"' if wide else ''}>
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header">
 <div class="wrap">
@@ -62,14 +69,9 @@ class Templates:
 {self.nav(path)}
 </div>
 </header>
-<main id="main" class="wrap" tabindex="-1">
+<main id="main"{"" if wide else ' class="wrap"'} tabindex="-1">
 {body}
 </main>
-<footer class="site-footer">
-<div class="wrap">
-<p>© {esc(site['year'])} {esc(site['author'])} · <a href="/feed.xml">RSS feed</a></p>
-</div>
-</footer>
 <script>{self.theme_js}</script>
 {scripts}
 </body>
@@ -106,21 +108,78 @@ class Templates:
         return self.layout(title=doc.title, body=body, path=doc.url,
                            description=doc.summary, has_images=_has_images(body))
 
-    def index(self, posts, page, pages):
-        heading = "Posts" if page == 1 else f"Posts, page {page} of {pages}"
-        items = "\n".join(f"""<li><article>
-<h2><a href="{esc(p.url)}">{esc(p.title)}</a></h2>
-<p class="meta">{time_tag(p.date)}</p>
-<p>{esc(p.summary)}</p>
-</article></li>""" for p in posts)
-        body = f"""<h1>{esc(heading)}</h1>
-<ul class="post-list" role="list">
-{items}
-</ul>
-{self.pagination(page, pages)}"""
+    def index(self, entries, page, pages):
+        """The homepage: albums and posts mixed, newest first."""
+        items = []
+        for i, e in enumerate(entries):
+            items.append(self.album_card(e, eager=(i == 0)) if e.kind == "album" else self.post_row(e))
+        heading = "" if page == 1 else f'<h1 class="home-col">Page {page} of {pages}</h1>'
+        body = f"""<h1 class="vh">{esc(self.site['title'])}</h1>
+{heading}
+<div class="entries">
+{"".join(items)}
+</div>
+<div class="home-col">{self.pagination(page, pages)}</div>"""
         path = index_url(page)
-        title = self.site["title"] if page == 1 else f"Posts, page {page}"
-        return self.layout(title=title, body=body, path=path)
+        title = self.site["title"] if page == 1 else f"Page {page}"
+        return self.layout(title=title, body=body, path=path, wide=True, has_images=_has_images(body))
+
+    def post_row(self, p):
+        return f"""<article class="entry post-row"><div class="home-col row">
+<h2><a href="{esc(p.url)}">{esc(p.title)}</a></h2>
+<div class="side">
+<p class="meta"><span class="tag">Post</span> {time_tag(p.date)}</p>
+<p>{esc(p.summary)}</p>
+</div>
+</div></article>
+"""
+
+    def album_card(self, a, eager=False):
+        shots = "".join(
+            f'<div style="--ar:{ph.info.width / ph.info.height:.4f}">'
+            + _img(ph.info, "", STRIP_SIZES, link=False, noupgrade=True, eager=eager and n == 0)
+            + "</div>"
+            for n, ph in enumerate(a.home_photos()))
+        count = f"{len(a.photos)} photo{'s' if len(a.photos) != 1 else ''}"
+        return f"""<article class="entry album-card">
+<div class="strip">{shots}</div>
+<div class="album-title">
+<p class="meta"><span class="tag">Album</span> {time_tag(a.date)} · {count}</p>
+<h2><a href="{esc(a.url)}">{esc(a.title)}</a></h2>
+{f'<p class="summary">{esc(a.summary)}</p>' if a.summary else ''}
+</div>
+</article>
+"""
+
+    def album(self, a):
+        figs = []
+        for n, ph in enumerate(a.photos):
+            cap = f"\n<figcaption>{esc(ph.caption)}</figcaption>" if ph.caption else ""
+            figs.append(f'<figure style="--ar:{ph.info.width / ph.info.height:.4f}">'
+                        + _img(ph.info, ph.alt, GALLERY_SIZES, eager=n < 2) + cap + "</figure>")
+        count = f"{len(a.photos)} photo{'s' if len(a.photos) != 1 else ''}"
+        body = f"""<div class="home-col album-page">
+<header>
+<h1>{esc(a.title)}</h1>
+<p class="meta">{time_tag(a.date)} · {count}</p>
+</header>
+<div class="album-text">{a.html}</div>
+</div>
+<div class="gallery home-col">
+{"".join(figs)}
+</div>"""
+        return self.layout(title=a.title, body=body, path=a.url, description=a.summary,
+                           wide=True, has_images=_has_images(body))
+
+    def albums_index(self, albums):
+        cards = "".join(self.album_card(a) for a in albums) or '<p class="home-col">No albums yet.</p>'
+        body = f'<h1 class="vh">Albums</h1>\n<div class="entries">{cards}</div>'
+        return self.layout(title="Albums", body=body, path="/albums/", wide=True, has_images=_has_images(body))
+
+    def posts_index(self, posts):
+        rows = "".join(self.post_row(p) for p in posts) or '<p class="home-col">No posts yet.</p>'
+        body = f'<h1 class="vh">Posts</h1>\n<div class="entries">{rows}</div>'
+        return self.layout(title="Posts", body=body, path="/posts/", wide=True)
 
     def pagination(self, page, pages):
         if pages <= 1:
@@ -139,7 +198,7 @@ class Templates:
 
     def not_found(self):
         body = """<h1>Page not found</h1>
-<p>Sorry, there’s nothing at this address. Try the <a href="/">list of posts</a>.</p>"""
+<p>Sorry, there’s nothing at this address. Try the <a href="/">homepage</a>.</p>"""
         return self.layout(title="Page not found", body=body, path="/404.html", noindex=True)
 
 
@@ -147,6 +206,20 @@ class Templates:
 THEME_ICON = ('<svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 20 20">'
               '<circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/>'
               '<path d="M10 2a8 8 0 0 1 0 16z" fill="currentColor"/></svg>')
+
+
+# Strip photos are about 1/N of the viewport wide, where N is how many the CSS shows.
+STRIP_SIZES = "(min-width: 2000px) 25vw, (min-width: 641px) 33vw, 50vw"
+GALLERY_SIZES = "(min-width: 1400px) 400px, (min-width: 700px) 33vw, 50vw"
+
+
+def _img(info, alt, sizes, link=True, noupgrade=False, eager=False):
+    el = image(info, alt, eager=eager, sizes=sizes, link=link)
+    if noupgrade:
+        for img in el.iter("img"):
+            if img.get("data-full") is not None:
+                img.set("data-noupgrade", "")
+    return to_html_string(el)
 
 
 def index_url(page):

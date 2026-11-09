@@ -53,6 +53,8 @@ def build(root=".", drafts=False, base_url=None, log=print):
         log(f"warning: {msg}")
 
     posts, pages = content.load_all(content_dir, drafts=drafts)
+    albums = content.load_albums(content_dir, drafts=drafts)
+    _check_album_slugs(albums)
     site["nav"] = list(site["nav"]) + [
         {"title": p.title, "href": p.url}
         for p in sorted((p for p in pages if p.nav is not None), key=lambda p: p.nav)
@@ -90,15 +92,31 @@ def build(root=".", drafts=False, base_url=None, log=print):
         else:
             write(dist, doc.url, t.page(doc))
 
+    for album in albums:
+        for photo in album.photos:
+            photo.info = images.process(photo.path)
+        page_ext.begin(album.source / "album.md")
+        album.html = page_md.reset().convert(album.body)
+        feed_ext.begin(album.source / "album.md")
+        album.feed_html = feed_md.reset().convert(album.body) + "".join(
+            figure_html(ph.info, ph.alt, ph.caption, mode="feed", base_url=site["base_url"])
+            for ph in album.photos)
+        write(dist, album.url, t.album(album))
+    write(dist, "/albums/", t.albums_index(albums))
+    write(dist, "/posts/", t.posts_index(posts))
+
+    # The homepage mixes albums and posts, newest first.
+    entries = sorted(posts + albums, key=lambda e: (e.date, e.slug), reverse=True)
     per_page = site["posts_per_page"]
-    n_pages = max(1, math.ceil(len(posts) / per_page))
+    n_pages = max(1, math.ceil(len(entries) / per_page))
     for n in range(1, n_pages + 1):
-        write(dist, index_url(n), t.index(posts[(n - 1) * per_page: n * per_page], n, n_pages))
+        write(dist, index_url(n), t.index(entries[(n - 1) * per_page: n * per_page], n, n_pages))
 
     (dist / "404.html").write_text(t.not_found(), encoding="utf-8")
     (dist / "feed.xml").write_text(feed.rss(site, posts), encoding="utf-8")
-    urls = [(index_url(n), None) for n in range(1, n_pages + 1)]
-    urls += [(d.url, d.date) for d in posts + pages]
+    (dist / "photos.xml").write_text(feed.photos_rss(site, albums), encoding="utf-8")
+    urls = [(index_url(n), None) for n in range(1, n_pages + 1)] + [("/albums/", None), ("/posts/", None)]
+    urls += [(d.url, d.date) for d in posts + albums + pages]
     (dist / "sitemap.xml").write_text(feed.sitemap(site, urls), encoding="utf-8")
     (dist / "robots.txt").write_text(
         f"User-agent: *\nAllow: /\nDisallow: /giro/\nSitemap: {site['base_url']}/sitemap.xml\n")
@@ -114,9 +132,17 @@ def build(root=".", drafts=False, base_url=None, log=print):
         write(dist, "/giro/", t.giro(*giro))
 
     n_images = len(list((dist / "img").glob("*"))) if (dist / "img").exists() else 0
-    log(f"built {len(posts)} posts, {len(pages)} pages, {n_images} image files "
+    log(f"built {len(posts)} posts, {len(albums)} albums, {len(pages)} pages, {n_images} image files "
         f"in {time.perf_counter() - started:.2f}s -> {dist}")
     return warnings
+
+
+def _check_album_slugs(albums):
+    seen = set()
+    for a in albums:
+        if a.slug in seen:
+            raise BuildError(f"{a.source}: another album already uses the slug {a.slug!r}")
+        seen.add(a.slug)
 
 
 def copy_giro(downloads, out, log):

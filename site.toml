@@ -1,5 +1,5 @@
 title = "tgnra.net"
-description = "Notes and writing."
+description = "Photos and writing."
 base_url = "https://tgnra.net"
 author = "Your Name"
 language = "en"
@@ -8,5 +8,13 @@ feed_items = 20
 
 # Pages with `nav: <n>` in their front matter are appended after these, in order.
 [[nav]]
-title = "Posts"
+title = "Home"
 href = "/"
+
+[[nav]]
+title = "Albums"
+href = "/albums/"
+
+[[nav]]
+title = "Posts"
+href = "/posts/"

@@ -11,6 +11,8 @@ python -m venv .venv
 .venv/Scripts/python -m unittest
 ```
 
+`./dev.sh` does the same on port 5000 with browser live reload; it uses `shell.nix` on NixOS and a venv elsewhere.
+
 Deploy `dist/` to any static host. `dist/_headers` marks `/img/*` as immutable on Netlify and Cloudflare Pages.
 
 ## Writing
@@ -32,6 +34,22 @@ draft: true             # skipped unless --drafts
 nav: 1                  # pages only: show in the nav, in this order
 ---
 ```
+
+## Albums
+
+An album is a folder in `content/albums/` holding photos (`.jpg`, `.png`, `.webp`, sorted by filename) and an optional `album.md` or `album.json`:
+
+```
+content/albums/2026-11-02-golden-hour/
+  album.md        # or album.json
+  01.jpg  02.jpg  ...
+```
+
+- The date comes from the folder prefix (`YYYY-MM-DD-slug`) or a `date:` field. The URL is `/albums/slug/`.
+- `album.md`: front matter with `title`, `summary`, `date`, `draft` and `featured: 01.jpg, 04.jpg`, then a Markdown description.
+- `album.json`: `{"title", "summary", "description", "featured": [...], "photos": {"01.jpg": {"alt": "...", "caption": "..."}}}`. Use `photos` for per-photo alt text and captions; without it, alt text is "Photo N from <title>".
+- The homepage shows up to 4 photos from each album in one row: your `featured` photos, or an even spread. 4 on ultrawides (2000px+), 3 on desktops and tablets, 2 on phones.
+- Albums and posts are mixed, newest first, on the homepage. `/albums/` and `/posts/` list each type, `feed.xml` is posts only and `photos.xml` is albums only.
 
 ## Images
 

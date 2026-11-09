@@ -1,37 +1,54 @@
 /* Inlined into every page. Keep it small. */
+@font-face {
+  font-family: "Adamina";
+  src: url(/fonts/adamina.woff2) format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
 :root {
-  --bg: #fdfcfa;
-  --fg: #1d1c1a;
-  --muted: #5a5650;
-  --rule: #dcd8d0;
-  --link: #0a55a0;
-  --visited: #6a3a9c;
-  --focus: #c2410c;
-  --code-bg: #f1eee8;
+  /* Palette: https://coolors.co/ffd275-e8ae68-a57f60-e3a587-db5a42 */
+  --accent: #ffd275;
+  --accent-2: #e8ae68;
+  --accent-3: #a57f60;
+  --accent-4: #e3a587;
+  --accent-5: #db5a42;
+  --on-accent: #241f1a;
+  --blob: 0.5;
+  --bg: #fdfaf4;
+  --fg: #241f1a;
+  --muted: #6a5f55;
+  --rule: #eadfce;
+  --link: #a8361f;
+  --visited: #7d4f33;
+  --focus: #db5a42;
+  --code-bg: #f6eedf;
   --measure: 40rem;
+  --display: "Adamina", Georgia, "Times New Roman", serif;
 }
 /* Dark: follows the system unless the nav toggle chose light; or chosen explicitly. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #141417;
-    --fg: #e9e6e1;
-    --muted: #aaa59d;
-    --rule: #34343a;
-    --link: #8cb8ff;
-    --visited: #c8a6ff;
-    --focus: #ff9a5c;
-    --code-bg: #1f1f24;
+    --blob: 0.2;
+    --bg: #171310;
+    --fg: #f1e9df;
+    --muted: #b8aa9b;
+    --rule: #3a3028;
+    --link: #ffd275;
+    --visited: #e3a587;
+    --focus: #ffd275;
+    --code-bg: #241d18;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #141417;
-  --fg: #e9e6e1;
-  --muted: #aaa59d;
-  --rule: #34343a;
-  --link: #8cb8ff;
-  --visited: #c8a6ff;
-  --focus: #ff9a5c;
-  --code-bg: #1f1f24;
+  --blob: 0.2;
+  --bg: #171310;
+  --fg: #f1e9df;
+  --muted: #b8aa9b;
+  --rule: #3a3028;
+  --link: #ffd275;
+  --visited: #e3a587;
+  --focus: #ffd275;
+  --code-bg: #241d18;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -42,9 +59,19 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font: clamp(1rem, 0.95rem + 0.25vw, 1.125rem) / 1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: clamp(1rem, 0.95rem + 0.25vw, 1.125rem) / 1.65 var(--display);
   overflow-wrap: break-word;
 }
+/* Soft, blurred accent glow behind everything. */
+body::before {
+  content: ""; position: fixed; inset: -10vmax; z-index: -1; pointer-events: none;
+  opacity: var(--blob); filter: blur(40px);
+  background:
+    radial-gradient(45vmax 32vmax at 12% 8%, var(--accent), transparent 70%),
+    radial-gradient(38vmax 30vmax at 92% 28%, var(--accent-4), transparent 70%),
+    radial-gradient(48vmax 34vmax at 55% 105%, var(--accent-2), transparent 70%);
+}
+::selection { background: var(--accent); color: var(--on-accent); }
 .wrap { max-width: var(--measure); margin-inline: auto; padding-inline: 1rem; }
 
 a { color: var(--link); text-underline-offset: 0.15em; }
@@ -62,24 +89,31 @@ a:visited { color: var(--visited); }
 }
 
 /* Header + nav: a plain wrapping list, no JS menu. */
-.site-header { border-bottom: 1px solid var(--rule); }
+.site-header {
+  position: sticky; top: 0; z-index: 5;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-3) 35%, transparent);
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
 .site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 1rem; padding-block: 0.5rem; }
-.site-title { font-weight: 700; font-size: 1.15rem; color: var(--fg); text-decoration: none; padding-block: 0.6rem; }
+.site-title { font-family: var(--display); font-weight: 400; font-size: 1.4rem; color: var(--fg); text-decoration: none; padding-block: 0.6rem; }
 .site-title:visited { color: var(--fg); }
 nav ul { display: flex; flex-wrap: wrap; align-items: center; gap: 0 0.25rem; margin: 0; padding: 0; list-style: none; }
 nav a { display: inline-flex; align-items: center; min-height: 44px; padding-inline: 0.5rem; }
 nav a:visited { color: var(--link); }
-nav a[aria-current="page"] { color: var(--fg); font-weight: 600; text-decoration-thickness: 2px; }
+nav a[aria-current="page"], nav a[aria-current="page"]:visited {
+  color: var(--on-accent); background: var(--accent); border-radius: 99px; text-decoration: none;
+}
 nav li[hidden] { display: none; }
 .theme-toggle {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 44px; min-height: 44px; padding: 0; margin-left: 0.25rem;
   color: var(--fg); background: transparent; border: 0; border-radius: 4px; cursor: pointer;
 }
-.theme-toggle:hover { background: var(--code-bg); }
+.theme-toggle:hover { background: color-mix(in srgb, var(--accent) 35%, transparent); }
 
 main { display: block; padding-block: 2rem 3rem; }
-h1, h2, h3, h4 { line-height: 1.25; margin: 2rem 0 0.75rem; text-wrap: balance; }
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 400; line-height: 1.25; margin: 2rem 0 0.75rem; text-wrap: balance; }
 h1 { font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.4rem); margin-top: 0; }
 h2 { font-size: 1.45rem; }
 h3 { font-size: 1.2rem; }
@@ -128,23 +162,122 @@ figcaption { color: var(--muted); font-size: 0.9em; margin-top: 0.5rem; }
   border: 1px solid rgb(255 255 255 / 0.6); border-radius: 4px; cursor: pointer;
 }
 
-/* Index */
-.post-list { list-style: none; padding: 0; }
-.post-list > li { margin-bottom: 2rem; }
-.post-list h2 { margin: 0 0 0.25rem; font-size: 1.3rem; }
-.post-list p { margin-bottom: 0; }
-.pagination ul { justify-content: space-between; }
 
-.site-footer { border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.9em; }
-.site-footer .wrap { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; justify-content: space-between; align-items: center; padding-block: 1rem; }
-.site-footer p { margin: 0; }
+/* Homepage, albums and post archive: a wider column; photos run edge to edge. */
+body.wide { --measure: 1440px; --home-inset: 1rem; }
+.home-col { max-width: var(--measure); margin-inline: auto; padding-inline: 1rem; }
+body.wide main { padding-block: 0 3rem; }
+body.wide main > h1.home-col { margin-top: 2rem; }
+.entries { display: flex; flex-direction: column; gap: clamp(2rem, 4vw, 3.5rem); padding-top: clamp(1rem, 3vw, 2.5rem); }
+.entry { position: relative; }
+.entry .meta { margin: 0 0 0.4rem; }
+.entry h2 a { color: var(--fg); text-decoration: none; }
+.entry h2 a:visited { color: var(--fg); }
+/* The whole entry is clickable via the title link. */
+.entry h2 a::after { content: ""; position: absolute; inset: 0; }
+.entry:has(a:focus-visible) { outline: 3px solid var(--focus); outline-offset: 4px; }
+.entry a:focus-visible { outline: none; }
+.tag {
+  display: inline-block; padding: 0.05em 0.6em; border-radius: 99px; margin-right: 0.35em;
+  background: var(--accent); color: var(--on-accent);
+  font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.07em;
+}
+
+.post-row .row {
+  position: relative; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 1rem 3rem; align-items: start;
+  border-top: 1px solid color-mix(in srgb, var(--accent-3) 40%, transparent); padding-top: 1.5rem;
+}
+.post-row h2 {
+  margin: 0; font-size: clamp(2rem, 1.1rem + 3.2vw, 4.25rem); line-height: 1.05; letter-spacing: -0.01em;
+}
+/* Hover/focus: a yellow bar grows down the left edge and the title slides right to make room. */
+.post-row .row::before {
+  content: ""; position: absolute; left: 1rem; top: 1.5rem; bottom: 0; width: 4px; border-radius: 2px;
+  background: var(--accent); transform: scaleY(0); transform-origin: top;
+}
+.post-row h2 { transition: transform 0.3s ease-out; }
+.post-row:hover .row::before, .post-row:has(a:focus-visible) .row::before { transform: scaleY(1); }
+.post-row:hover h2, .post-row:has(a:focus-visible) h2 { transform: translateX(1.25rem); }
+@media (prefers-reduced-motion: no-preference) {
+  .post-row .row::before { transition: transform 0.3s ease-out; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .post-row h2 { transition: none; }
+}
+.post-row .side { padding-top: 0.5rem; max-width: 32rem; font-size: 0.95rem; }
+.post-row .side p:last-child { margin-bottom: 0; }
+
+/* Album: photos in one row at a shared height (flex-grow = aspect ratio), title box floating over the photos. */
+.album-card { display: grid; }
+.album-card > * { grid-area: 1 / 1; }
+.strip { display: flex; gap: 4px; overflow: hidden; background: color-mix(in srgb, var(--accent-3) 30%, transparent); }
+.strip > div { flex: var(--ar) 1 0%; min-width: 0; }
+.strip .img-wrap, .strip picture { display: block; }
+.strip img { display: block; width: 100%; height: auto; transition: filter 0.3s; }
+.album-card:hover .strip img { filter: brightness(1.06) saturate(1.08); }
+/* Fewer photos = taller photos (height is width / summed aspect ratios). 3, or 4 on ultrawides, 2 on phones. */
+.strip > div:nth-child(n+4) { display: none; }
+@media (min-width: 2000px) { .strip > div:nth-child(4) { display: block; } }
+.album-title {
+  z-index: 1; align-self: end; justify-self: end; max-width: min(26rem, 70%);
+  /* Right edge lines up with the text column, so on ultrawides it sits nearer the middle. */
+  margin: 0 max(1.5rem, calc((100% - var(--measure)) / 2 + 1rem)) 1.5rem 0;
+  padding: 1rem 1.4rem 1.2rem; color: var(--on-accent); border-radius: 3px;
+  /* Hover/focus: a yellow line grows down the right edge (a background layer, since the box can't be positioned). */
+  background: linear-gradient(var(--accent), var(--accent)) right top / 5px 0 no-repeat, #fff;
+  box-shadow: 0 12px 40px rgb(36 31 26 / 0.28);
+}
+.album-card:hover .album-title, .album-card:has(a:focus-visible) .album-title { background-size: 5px 100%, auto; }
+@media (prefers-reduced-motion: no-preference) {
+  .album-title { transition: background-size 0.3s ease-out; }
+}
+.album-title .meta { color: #6a5f55; }
+.album-title h2 { margin: 0; font-size: clamp(1.5rem, 1rem + 1.4vw, 2.4rem); line-height: 1.1; }
+.album-title h2 a, .album-title h2 a:visited { color: var(--on-accent); }
+.album-title .summary { margin: 0.5rem 0 0; font-size: 0.95rem; color: #4a4038; }
+
+@media (max-width: 640px) {
+  .strip > div:nth-child(n+3) { display: none; }
+  .post-row .row { grid-template-columns: 1fr; gap: 0.5rem; }
+  /* Phones: two photos, title box underneath. */
+  .album-card { grid-template-columns: minmax(0, 1fr); }
+  .album-card > * { grid-area: auto; }
+  .album-title {
+    justify-self: stretch; max-width: none; margin: 0; border-radius: 0; box-shadow: none;
+    border-bottom: 5px solid var(--accent);
+  }
+}
+
+/* Album page: justified rows. Figures wrap at their natural width, then grow a little (capped, so the last row stays ragged). */
+.album-page h1 { font-size: clamp(2.25rem, 1.2rem + 3.5vw, 4.5rem); margin-top: 2rem; line-height: 1.05; }
+.album-text { max-width: 40rem; }
+.gallery { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 1.5rem; }
+.gallery figure { margin: 0; flex: calc(var(--ar) * 100) 1 calc(var(--ar) * 240px); max-width: calc(var(--ar) * 420px); }
+.gallery .zoom, .gallery .img-wrap, .gallery picture { display: block; }
+.gallery img { display: block; width: 100%; height: auto; }
+.gallery figcaption { margin: 0.35rem 0 0.5rem; }
+@media (max-width: 640px) {
+  .gallery figure { flex-basis: calc(var(--ar) * 150px); max-width: calc(var(--ar) * 300px); }
+}
+
+.lightbox .prev, .lightbox .next {
+  position: absolute; top: 50%; translate: 0 -50%; min-height: 56px; min-width: 44px;
+  font: inherit; font-size: 1.75rem; line-height: 1; color: #fff; background: rgb(0 0 0 / 0.5);
+  border: 1px solid rgb(255 255 255 / 0.6); border-radius: 4px; cursor: pointer;
+}
+.lightbox .prev { left: 0.5rem; }
+.lightbox .next { right: 0.5rem; }
+.lightbox [hidden] { display: none; }
+
+/* Index (pagination) */
+.pagination ul { justify-content: space-between; margin-top: 2rem; }
+
 
 /* Motion: page slide via cross-document view transitions, and the lightbox fade.
    Nothing here applies under prefers-reduced-motion. */
 @media (prefers-reduced-motion: no-preference) {
   @view-transition { navigation: auto; }
   .site-header { view-transition-name: site-header; }
-  .site-footer { view-transition-name: site-footer; }
   main { view-transition-name: main; }
   ::view-transition-old(main) { animation: 250ms ease-out both vt-out; }
   ::view-transition-new(main) { animation: 250ms ease-out both vt-in; }

@@ -55,7 +55,7 @@
   }
 
   function addUpgrade(img) {
-    if (img._upgrade) return;
+    if (img._upgrade || img.hasAttribute("data-noupgrade")) return;
     var b = d.createElement("button");
     b.type = "button";
     b.className = "upgrade";
@@ -87,15 +87,27 @@
   });
 
   // Lightbox: always the original-size image, whatever the tier.
-  var dlg, opener;
+  var dlg, opener, group = [];
+  function step(n) {
+    var i = group.indexOf(opener) + n;
+    if (group[i]) lightbox(group[i]);
+  }
   function lightbox(a) {
     var img = a.querySelector(".img-js img");
     if (!dlg) {
       dlg = d.createElement("dialog");
       dlg.className = "lightbox";
       dlg.innerHTML = '<button type="button" class="close">Close</button>' +
+        '<button type="button" class="prev" aria-label="Previous photo">‹</button>' +
+        '<button type="button" class="next" aria-label="Next photo">›</button>' +
         '<picture><source type="image/avif"><source type="image/webp"><img alt=""></picture>';
       dlg.querySelector(".close").addEventListener("click", function () { dlg.close(); });
+      dlg.querySelector(".prev").addEventListener("click", function () { step(-1); });
+      dlg.querySelector(".next").addEventListener("click", function () { step(1); });
+      dlg.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowLeft") step(-1);
+        else if (e.key === "ArrowRight") step(1);
+      });
       dlg.addEventListener("click", function (e) {
         if (e.target === dlg || e.target.tagName === "PICTURE") dlg.close();
       });
@@ -114,7 +126,13 @@
     big.src = a.href;
     dlg.setAttribute("aria-label", "Image: " + img.alt);
     opener = a;
-    dlg.showModal();
+    // Photos in the same gallery can be paged through.
+    var gal = a.closest(".gallery");
+    group = gal ? Array.prototype.slice.call(gal.querySelectorAll("a.zoom")) : [a];
+    var i = group.indexOf(a);
+    dlg.querySelector(".prev").hidden = i <= 0;
+    dlg.querySelector(".next").hidden = i >= group.length - 1;
+    if (!dlg.open) dlg.showModal();
   }
 
   d.addEventListener("click", function (e) {

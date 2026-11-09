@@ -13,27 +13,37 @@ def _rfc822(date):
 
 
 def rss(site, posts):
+    """Posts only. Albums have their own feed: see photos_rss()."""
+    return _rss(site, posts, site["title"], "/feed.xml", lambda p: p.feed_html)
+
+
+def photos_rss(site, albums):
+    """Albums only; each item's content is the album's description and all its photos."""
+    return _rss(site, albums, f"{site['title']} – photos", "/photos.xml", lambda a: a.feed_html)
+
+
+def _rss(site, docs, title, path, content_of):
     etree.register_namespace("atom", ATOM)
     etree.register_namespace("content", CONTENT)
     base = site["base_url"]
     root = etree.Element("rss", {"version": "2.0"})
     channel = etree.SubElement(root, "channel")
-    for tag, text in (("title", site["title"]), ("link", base + "/"),
+    for tag, text in (("title", title), ("link", base + "/"),
                       ("description", site["description"]), ("language", site["language"])):
         etree.SubElement(channel, tag).text = text
     etree.SubElement(channel, f"{{{ATOM}}}link", {
-        "href": base + "/feed.xml", "rel": "self", "type": "application/rss+xml"})
-    if posts:
-        etree.SubElement(channel, "lastBuildDate").text = _rfc822(posts[0].date)
-    for post in posts[: site["feed_items"]]:
+        "href": base + path, "rel": "self", "type": "application/rss+xml"})
+    if docs:
+        etree.SubElement(channel, "lastBuildDate").text = _rfc822(docs[0].date)
+    for doc in docs[: site["feed_items"]]:
         item = etree.SubElement(channel, "item")
-        url = base + post.url
-        etree.SubElement(item, "title").text = post.title
+        url = base + doc.url
+        etree.SubElement(item, "title").text = doc.title
         etree.SubElement(item, "link").text = url
         etree.SubElement(item, "guid", {"isPermaLink": "true"}).text = url
-        etree.SubElement(item, "pubDate").text = _rfc822(post.date)
-        etree.SubElement(item, "description").text = post.summary
-        etree.SubElement(item, f"{{{CONTENT}}}encoded").text = post.feed_html
+        etree.SubElement(item, "pubDate").text = _rfc822(doc.date)
+        etree.SubElement(item, "description").text = doc.summary
+        etree.SubElement(item, f"{{{CONTENT}}}encoded").text = content_of(doc)
     return '<?xml version="1.0" encoding="utf-8"?>\n' + etree.tostring(root, encoding="unicode")
 
 
